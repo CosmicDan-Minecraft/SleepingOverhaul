@@ -1,0 +1,2 @@
+include 'CosmicLib'
+project(':CosmicLib').projectDir = new File('../CosmicLib')

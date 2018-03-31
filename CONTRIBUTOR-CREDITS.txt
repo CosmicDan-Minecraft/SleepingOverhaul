@@ -1,0 +1,5 @@
+With the exception or addition of credits listed in this file, all content of this mod is fully bound by the terms defined in LICENSE.md. In the absence of any ownership information existing alongside a piece of content (e.g. class headers, sibling NOTICE files, etc.), the content in question is considered to be the property of Daniel "CosmicDan" Connolly.
+
+ - Choonster
+Helped with the solution on dynamically-setting block texture/models (PropertyStringMapper.java).
+

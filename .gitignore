@@ -1,0 +1,13 @@
+/?*
+/?*/
+!/gradle/
+!/scripts/
+!/src/
+!/.gitignore
+!/gradlew?*
+!**/?*.gradle
+!**/?*.txt
+!**/?*.md
+!**/?*.cmd
+!**/?*.bat
+!**/?*.properties

@@ -1,0 +1,16 @@
+[
+{
+  "modid": "immersivesleeping",
+  "name": "ImmersiveSleeping",
+  "description": "Replaces 'skip-to-day' with a realistic time-lapse sleep, among other configurable enhancements.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["CosmicDan"],
+  "credits": "Forge/FML and Mojang of course",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
