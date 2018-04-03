@@ -1,6 +1,6 @@
-How to submit a bug report to RichOreVariants
+How to submit a bug report to SleepingOverhaul
 ====================================
-Please make sure the bug has not already been reported by [searching the issues](https://github.com/CosmicDan-Minecraft/RichOreVariants/issues?q=is%3Aissue).
+Please make sure the bug has not already been reported by [searching the issues](https://github.com/CosmicDan-Minecraft/SleepingOverhaul/issues?q=is%3Aissue).
 
 If you can, see if the bug still happens with the latest alpha/beta/development build.
 
@@ -10,7 +10,7 @@ Full crash reports are located in [the minecraft data or "instance" folder](http
 
 Thank you for reporting bugs!
 
-How to contribute to RichOreVariants
+How to contribute to SleepingOverhaul
 ====================================
 
 ### Contributor License Agreement
@@ -19,7 +19,7 @@ Before pull requests can be accepted, all contributors needs to sign a contribut
 
 ### How do I sign?
 
-To keep the hassle for everyone involved to a minimum, I use CLA Assistant to manage the agreements - you can easily provide a digital signature for this with your GitHub account. You can <a href="https://cla-assistant.io/CosmicDan-Minecraft/RichOreVariants">sign the Contributor License Agreement for RichOreVariants here</a>.
+To keep the hassle for everyone involved to a minimum, I use CLA Assistant to manage the agreements - you can easily provide a digital signature for this with your GitHub account. You can <a href="https://cla-assistant.io/CosmicDan-Minecraft/SleepingOverhaul">sign the Contributor License Agreement for SleepingOverhaul here</a>.
 
 ### Why is this needed?
 

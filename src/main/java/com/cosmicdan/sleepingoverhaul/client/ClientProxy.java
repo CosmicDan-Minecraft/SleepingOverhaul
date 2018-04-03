@@ -1,19 +1,19 @@
-package com.cosmicdan.immersivesleeping.server;
+package com.cosmicdan.sleepingoverhaul.client;
 
 import com.cosmicdan.cosmiclib.annotations.ForgeEntryPoint;
-import com.cosmicdan.immersivesleeping.common.CommonProxy;
+import com.cosmicdan.sleepingoverhaul.common.CommonProxy;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 /**
- * Events that are only for dedicated servers.
+ * Client-only events
  * LEGACY ONLY. Use the new RegistryEvent system where possible!
  */
 @ForgeEntryPoint
-@Log4j2(topic = "ImmersiveSleeping/ServerProxy")
-public class ServerProxy extends CommonProxy {
+@Log4j2(topic = "SleepingOverhaul/ClientProxy")
+public class ClientProxy extends CommonProxy {
 	@Override
 	public final void preInit(FMLPreInitializationEvent event) {
 		super.preInit(event);

@@ -1,7 +1,7 @@
 [
 {
-  "modid": "immersivesleeping",
-  "name": "ImmersiveSleeping",
+  "modid": "sleepingoverhaul",
+  "name": "SleepingOverhaul",
   "description": "Replaces 'skip-to-day' with a realistic time-lapse sleep, among other configurable enhancements.",
   "version": "${version}",
   "mcversion": "${mcversion}",

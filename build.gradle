@@ -1,6 +1,7 @@
 /*
- * CosmicDan's gradle build files were originally based on Mantle/TiC (SlimeKnights) design
- * Big thanks to Sunstrike, ProgWML6, AbrarSyed
+ * CosmicDan's Mods build script
+ * Thanks to SlimeKnights and aidancbrady for references
+ * TODO: Adapt the script to be more universal (i.e. working with contributors via only build.properties changes - not just CosmicDan's main dev machine)
  */
 
 buildscript {
@@ -20,31 +21,91 @@ buildscript {
 
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-ext.buildPropsFile = file "build.properties"
-buildPropsFile.withReader {
-	def prop = new Properties()
-	prop.load(it)
-	project.ext.buildProps = new ConfigSlurper().parse prop
+project.logger.lifecycle("")
+project.logger.lifecycle("---------------------------------")
+project.logger.lifecycle("[#] CosmicDan's Mods Build Script")
+project.logger.lifecycle("---------------------------------")
+project.logger.lifecycle("")
+
+
+
+/////////////////////////////////////////
+// Assign properties and build config
+/////////////////////////////////////////
+
+def propGetter(inputProp) {
+	def inputPropFile = file inputProp
+	inputPropFile.withReader {
+		def prop = new Properties()
+		prop.load(it)
+		def outputProp = new ConfigSlurper().parse prop
+		return outputProp
+	}
 }
 
-ext.versionPropsFile = file "version.properties"
-versionPropsFile.withReader {
-	def prop = new Properties()
-	prop.load(it)
-	project.ext.versionProps = new ConfigSlurper().parse prop
+ext.buildProps = propGetter("build.properties")
+ext.versionProps = propGetter("version.properties")
+ext.cosmiclibVersionProps = propGetter("../CosmicLib/version.properties")
+
+group = buildProps.group_prefix + '.' + buildProps.modid
+ext.groupAsPath = group.replace(".", "/")
+ext.coreModPluginClass = (group + '.' + buildProps.coremod_package_suffix + '.' + buildProps.coremod_class)
+ext.coreModPluginPath = 'src/main/java/' + coreModPluginClass.replace(".", "/") + '.java'
+ext.coreModFound = false
+try {
+	if (file(coreModPluginPath).exists()) { ext.coreModFound = true }
+} catch(Exception e) {}
+ext.accessTransformerName = buildProps.modid + "_at.cfg"
+ext.accessTransformerPath = "src/main/resources/META-INF/${accessTransformerName}"
+ext.accessTransformerFound = false
+if (file(accessTransformerPath).exists()) { ext.accessTransformerFound = true }
+ext.coreModCompanionExists = false
+if (file("src_cmc/").exists()) { ext.coreModCompanionExists = true }
+
+
+
+/////////////////////////////////////////
+// Store keystore password (do it early so build can fail early)
+/////////////////////////////////////////
+
+ext.keystorePassword = ""
+try {
+	ext.keystorePassword = new File(buildProps.keyStorePasswordFile).text
+} catch(Exception e) {
+	def errorMsg = "[!] Could not access file: " + buildProps.keyStorePasswordFile
+	logger.error(errorMsg)
+	throw e
 }
 
-// Inject CosmicLib version requirement to the source
-ext.cosmiclibVersionPropsFile = file "../CosmicLib/version.properties"
-cosmiclibVersionPropsFile.withReader {
-	def prop = new Properties()
-	prop.load(it)
-	project.ext.cosmiclibVersionProps = new ConfigSlurper().parse prop
+
+
+/////////////////////////////////////////
+// Print detected mod info
+/////////////////////////////////////////
+
+project.logger.lifecycle("[i] modId: " + buildProps.modid)
+project.logger.lifecycle("[i] group: " + group)
+project.logger.lifecycle("[i] coreModFound: " + coreModFound)
+if (coreModFound) {
+	project.logger.lifecycle("	[~] coreModPluginClass: " + coreModPluginClass)
+	project.logger.lifecycle("	[~] coreModPluginPath: " + coreModPluginPath)
 }
+project.logger.lifecycle("[i] accessTransformerFound: " + accessTransformerFound)
+if (accessTransformerFound) {
+	project.logger.lifecycle("	[~] accessTransformerName: " + accessTransformerName)
+	project.logger.lifecycle("	[~] accessTransformerPath: " + accessTransformerPath)
+}
+project.logger.lifecycle("[i] coreModCompanionExists: " + coreModCompanionExists)
+project.logger.lifecycle("[i] Keystore location: " + buildProps.keyStore)
+project.logger.lifecycle("[i] Keystore alias: " + buildProps.keyStoreAlias)
+project.logger.lifecycle("[i] Keystore password file: " + buildProps.keyStorePasswordFile)
+project.logger.lifecycle("")
 
-group = buildProps.group
 
-// get current build number from Git log
+/////////////////////////////////////////
+// Build version data/strings
+/////////////////////////////////////////
+
 task buildInfo {
 	def cmd = "git rev-parse --short HEAD"
 	def proc = cmd.execute()
@@ -57,7 +118,6 @@ task buildInfo {
 	ext.buildNum = "testbuild.${project.buildInfo.revision}"
 }
 
-// build version string
 ext.jarVersion = 'NFG'
 ext.cosmicmod_releasemode = System.getenv("COSMICMOD_RELEASEMODE")
 ext.baseVersion = "${versionProps.major}.${versionProps.minor}.${versionProps.revision}"
@@ -74,6 +134,7 @@ if ("${cosmicmod_releasemode}" != "null") {
 }
 version = "${buildProps.minecraft_version}-${jarVersion}"
 
+def versionPropsFile = file "version.properties"
 task incrementBuildnumber(type:Copy){
 	if ("${cosmicmod_releasemode}" != "null") {
 		ant.propertyfile(file: versionPropsFile) {
@@ -83,19 +144,42 @@ task incrementBuildnumber(type:Copy){
 }
 compileJava.dependsOn incrementBuildnumber
 
+
+
+/////////////////////////////////////////
+// Common ForegeGradle stuff
+/////////////////////////////////////////
+
 sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 compileJava {
 	sourceCompatibility = targetCompatibility = '1.8'
 }
-
+ 
 minecraft {
 	version = "${buildProps.forge_version}"
 	runDir = "run"
-	replace "@jar_fingerprint@", "${buildProps.signature_sha1}"
-	replace "@version@", "${baseVersion}"
-	replace "required-after:cosmiclib", "required-after:cosmiclib@[${cosmiclibVersionProps.major}.${cosmiclibVersionProps.minor}.${cosmiclibVersionProps.revision},)"
 	mappings = "${buildProps.mcp_mappings}"
-	// makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+	makeObfSourceJar = false
+	
+	project.logger.lifecycle("")
+	project.logger.lifecycle("[i] Parsing IDE config...")
+	if (coreModFound) {
+		project.logger.lifecycle("	[~] CoreModCompanion detected; plugin found for IDE's JVM args:")
+		project.logger.lifecycle("	    ${coreModPluginClass}")
+		clientJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
+		serverJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
+	} else {
+		project.logger.lifecycle("	[~] No CoreModCompanion found")
+	}
+	
+	if (buildProps.username != "null") {
+		project.logger.lifecycle("	[~] Username found for IDE's run args:")
+		project.logger.lifecycle("	    ${buildProps.username}")
+		clientRunArgs += "--username ${buildProps.username}"
+	} else {
+		project.logger.lifecycle("	[~] No username set. Will be random!")
+	}
+	project.logger.lifecycle("")
 }
 
 dependencies {
@@ -109,6 +193,13 @@ processResources {
 	inputs.property "version", baseVersion
 	inputs.property "mcversion", project.minecraft.version
 
+	from(sourceSets.main.resources.srcDirs) {
+		include 'Main.java', 'ModConfig.java'
+		expand	'@jar_fingerprint@': buildProps.signature_sha1,
+				'@version@': baseVersion,
+				'required-after:cosmiclib':"required-after:cosmiclib@[${cosmiclibVersionProps.major}.${cosmiclibVersionProps.minor}.${cosmiclibVersionProps.revision},)"
+	}
+	
 	// replace stuff in mcmod.info, nothing else
 	from(sourceSets.main.resources.srcDirs) {
 		include 'mcmod.info'
@@ -117,53 +208,122 @@ processResources {
 		expand 'version':baseVersion, 'mcversion':project.minecraft.version
 	}
 		
-	// copy everything else except the mcmod.info
+	// copy everything else except the mcmod.info and coremod
 	from(sourceSets.main.resources.srcDirs) {
 		exclude 'mcmod.info'
+		exclude groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
 	}
 }
 
+
+
+/////////////////////////////////////////
+// Build task definitions
+/////////////////////////////////////////
+
+// Main jar
 jar {
-	manifest {
-		// AT's here
-	}
+	archiveName = "${project.name}___FULL-DO-NOT-DISTRIB___${project.version}.jar"
 	finalizedBy reobfJar
 }
 
-// Create deobf dev jars
+// Deobfuscated (dev) jar
 task deobfJar(type: Jar) {
+	archiveName = "${project.name}-DEV-ONLY-${project.version}-full-deobf.jar"
 	from sourceSets.main.output
 	classifier = 'deobf'
+
 	manifest {
-		// AT's here
+		if (accessTransformerFound) {
+			attributes 'FMLAT': accessTransformerName
+		}
 	}
 }
 
-task sourcesJar(type: Jar) {
+// Sources jar
+task sourceDeobfJar(type: Jar) {
+	archiveName = "${project.name}-DEV-ONLY-${project.version}-full-src.jar"
+	from sourceSets.main.resources.srcDirs
 	from sourceSets.main.allJava
 	classifier = 'sources'
 }
 
-String keyStorePass = new File('X:/CosmicDan_keystore_Minecraft-Mods_password').text
-task signJar(type: SignJar, dependsOn: reobfJar) {
-	// Skips if the keyStore property is missing.
-	onlyIf {
-		keyStorePass != "null"
+// Sign jar task template
+def signJars(jarToSign) {
+	return tasks.create(name: "sign${jarToSign.classifier}Jar", type: SignJar, dependsOn: jarToSign) {
+		keyStore = buildProps.keyStore
+		alias = buildProps.keyStoreAlias
+		storePass = keystorePassword
+		keyPass = keystorePassword
+		inputFile = jarToSign.archivePath
+		outputFile = jarToSign.archivePath
 	}
-
-	keyStore = buildProps.keyStore
-	alias = buildProps.keyStoreAlias
-	storePass = keyStorePass
-	keyPass = keyStorePass
-	inputFile = jar.archivePath
-	outputFile = jar.archivePath
 }
 
-build.dependsOn signJar
+// Distrib or "release" (based on Main jar but with coremod, if any, stripped out)
+task mainJar(type: Jar) {
+	archiveName = "${project.name}-${project.version}.jar"
+	classifier "main"
+	dependsOn "extractAnnotationsJar"
+
+	manifest {
+		if (accessTransformerFound) {
+			attributes 'FMLAT': accessTransformerName
+		}
+	}
+	
+	from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
+		exclude groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
+	}
+}
+
+// CoreModCompanion jar
+task cmcJar(type: Jar) {
+	archiveName = "${project.name}-${project.version}-CoreModCompanion.jar"
+	classifier "cmc"
+	dependsOn "extractAnnotationsJar"
+	
+	manifest {
+		attributes 'FMLCorePlugin': coreModPluginClass,
+                   'FMLCorePluginContainsFMLMod': 'true'
+	}
+	
+	from('src_cmc') {
+		include '*'
+		expand 'version':baseVersion, 'mcversion':project.minecraft.version
+	}
+
+	// Copy CoreMod and non-standard metadata (e.g. FML asm json)
+	from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
+		include groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
+		include 'META-INF/**'
+		exclude 'META-INF/*.cfg'
+		exclude 'META-INF/MANIFEST.MF'
+	}
+}
+
+/////////////////////////////////////////
+// Build task actions
+/////////////////////////////////////////
 
 artifacts {
 	archives deobfJar
-	archives sourcesJar
+	archives sourceDeobfJar
+	archives mainJar
+	if (coreModFound) {
+		if (coreModCompanionExists) {
+			archives cmcJar
+		} else {
+			log.error("[!] A coremod plugin is found but the src_cmc folder does not. CoreModCompanion task NOT performed; coremod plugin kept bundled in main mod. This is bad!")
+		}
+	}
+}
+
+build {
+	dependsOn signJars(mainJar)
+	if (coreModFound && coreModCompanionExists) {
+		dependsOn signJars(cmcJar)
+	}
 }
 
 // Commented-out as it's already grabbed from CosmicLib 
