@@ -1,6 +1,6 @@
 /*
  * CosmicDan's Mods build script
- * Thanks to SlimeKnights and aidancbrady for references
+ * Additional credits to SlimeKnights, aidancbrady and Choonster
  * TODO: Adapt the script to be more universal (i.e. working with contributors via only build.properties changes - not just CosmicDan's main dev machine)
  */
 
@@ -161,6 +161,10 @@ minecraft {
 	mappings = "${buildProps.mcp_mappings}"
 	makeObfSourceJar = false
 	
+	replace "@jar_fingerprint@", "${buildProps.signature_sha1}"
+	replace "@version@", "${baseVersion}"
+	replace "required-after:cosmiclib", "required-after:cosmiclib@[${cosmiclibVersionProps.major}.${cosmiclibVersionProps.minor}.${cosmiclibVersionProps.revision},)"
+	
 	project.logger.lifecycle("")
 	project.logger.lifecycle("[i] Parsing IDE config...")
 	if (coreModFound) {
@@ -188,17 +192,16 @@ dependencies {
 	testCompile "junit:junit:4.12"
 }
 
+
+
+/////////////////////////////////////////
+// Build task definitions
+/////////////////////////////////////////
+
 processResources {
 	// this will ensure that this task is redone when the versions change.
 	inputs.property "version", baseVersion
 	inputs.property "mcversion", project.minecraft.version
-
-	from(sourceSets.main.resources.srcDirs) {
-		include 'Main.java', 'ModConfig.java'
-		expand	'@jar_fingerprint@': buildProps.signature_sha1,
-				'@version@': baseVersion,
-				'required-after:cosmiclib':"required-after:cosmiclib@[${cosmiclibVersionProps.major}.${cosmiclibVersionProps.minor}.${cosmiclibVersionProps.revision},)"
-	}
 	
 	// replace stuff in mcmod.info, nothing else
 	from(sourceSets.main.resources.srcDirs) {
@@ -211,15 +214,8 @@ processResources {
 	// copy everything else except the mcmod.info and coremod
 	from(sourceSets.main.resources.srcDirs) {
 		exclude 'mcmod.info'
-		exclude groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
 	}
 }
-
-
-
-/////////////////////////////////////////
-// Build task definitions
-/////////////////////////////////////////
 
 // Main jar
 jar {
@@ -284,8 +280,10 @@ task cmcJar(type: Jar) {
 	dependsOn "extractAnnotationsJar"
 	
 	manifest {
-		attributes 'FMLCorePlugin': coreModPluginClass,
-                   'FMLCorePluginContainsFMLMod': 'true'
+		attributes (
+			'FMLCorePlugin': coreModPluginClass,
+			'FMLCorePluginContainsFMLMod': 'true'
+		)
 	}
 	
 	from('src_cmc') {

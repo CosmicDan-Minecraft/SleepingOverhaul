@@ -11,35 +11,35 @@ import java.util.Map;
 @IFMLLoadingPlugin.TransformerExclusions(value = "com.cosmicdan.sleepingoverhaul.")
 @IFMLLoadingPlugin.SortingIndex(value = 1001) // How early your core mod is called - Use > 1000 to work with srg names
 public class CorePlugin implements IFMLLoadingPlugin {
-    @Override
-    public String[] getASMTransformerClass() {
-        ArrayList<String> transformers = new ArrayList<>();
-        transformers.add(EntityPlayerTransformer.class.getName());
-        
-        /********************************************************************************
-         * THIS COREMOD IS OPTIONAL. IT PROVIDES ENHANCED FUNCTIONALITY TO ITS BASE MOD.
-         ********************************************************************************/
+	@Override
+	public String[] getASMTransformerClass() {
+		ArrayList<String> transformers = new ArrayList<>();
+		transformers.add(EntityPlayerTransformer.class.getName());
+		
+		/********************************************************************************
+		 * THIS COREMOD IS OPTIONAL. IT PROVIDES ENHANCED FUNCTIONALITY TO ITS BASE MOD.
+		 ********************************************************************************/
 
 		return transformers.toArray(new String[0]);
-        
-    }
+		
+	}
 
-    @Override
-    public String getModContainerClass() {
-        return null;
-    }
+	@Override
+	public String getModContainerClass() {
+		return null;
+	}
 
-    @Override
-    public String getSetupClass() {
-        return null;
-    }
+	@Override
+	public String getSetupClass() {
+		return null;
+	}
 
-    @Override
-    public void injectData(Map<String, Object> data) {
-    }
+	@Override
+	public void injectData(Map<String, Object> data) {
+	}
 
-    @Override
-    public String getAccessTransformerClass() {
-        return null;
-    }
+	@Override
+	public String getAccessTransformerClass() {
+		return null;
+	}
 }

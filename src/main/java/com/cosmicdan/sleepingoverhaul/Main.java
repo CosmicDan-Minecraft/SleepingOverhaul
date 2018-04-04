@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 @SuppressWarnings({"StaticNonFinalField", "WeakerAccess"})
 @Log4j2(topic =  "SleepingOverhaul/Main")
-@Mod(modid = ModConstants.MODID, version = ModConstants.VERSION,
+@Mod(name = ModConstants.MODNAME, modid = ModConstants.MODID, version = ModConstants.VERSION,
 		dependencies =
 				"required-after:cosmiclib;" +
 				"required-after:tickratechanger@[1.0.14,)",
