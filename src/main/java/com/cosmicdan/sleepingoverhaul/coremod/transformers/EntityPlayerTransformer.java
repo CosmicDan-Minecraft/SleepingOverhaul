@@ -31,7 +31,7 @@ public class EntityPlayerTransformer extends AbstractInsnTransformer<JumpInsnNod
 
 	@Override
 	public String getReason() {
-		return "Additional check after isDaytime() to provide autoWakeAtDawn config capability";
+		return "Additional check after isDaytime() to allow sleeping during the day";
 	}
 
 	@Override
@@ -46,13 +46,13 @@ public class EntityPlayerTransformer extends AbstractInsnTransformer<JumpInsnNod
 
 	@Override
 	public JumpInsnNode getTargetNode(MethodNode m) {
-		AbstractInsnNode firstInvokeVirtual = ASMHelper.findFirstInstructionWithOpcode(m, Opcodes.INVOKEVIRTUAL);
+		final AbstractInsnNode firstInvokeVirtual = ASMHelper.findFirstInstructionWithOpcode(m, Opcodes.INVOKEVIRTUAL);
 		MethodInsnNode nextInvokeVirtual = (MethodInsnNode) firstInvokeVirtual;
 		JumpInsnNode targetNode = null;
 		while (nextInvokeVirtual != ASMHelper.findLastInstructionWithOpcode(m, Opcodes.INVOKEVIRTUAL)) {
 			nextInvokeVirtual = (MethodInsnNode) ASMHelper.findNextInstructionWithOpcode(nextInvokeVirtual, Opcodes.INVOKEVIRTUAL);
 			if (nextInvokeVirtual.name.equals(EnvInfo.isDevEnv() ? "isDaytime" : "func_72935_r")) {
-				// found "world.isDaytime()" check, get the next jump node
+				// found "world.isDaytime()" check, get the next IFEQ jump node
 				targetNode = (JumpInsnNode) ASMHelper.findNextInstructionWithOpcode(nextInvokeVirtual, Opcodes.IFEQ);
 			}
 		}

@@ -134,16 +134,6 @@ if ("${cosmicmod_releasemode}" != "null") {
 }
 version = "${buildProps.minecraft_version}-${jarVersion}"
 
-def versionPropsFile = file "version.properties"
-task incrementBuildnumber(type:Copy){
-	if ("${cosmicmod_releasemode}" != "null") {
-		ant.propertyfile(file: versionPropsFile) {
-			entry(key: 'revision', type: 'int', operation: '+', value: 001)
-		}
-	}
-}
-compileJava.dependsOn incrementBuildnumber
-
 
 
 /////////////////////////////////////////

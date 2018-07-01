@@ -19,6 +19,7 @@ import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 
 import java.util.List;
 
@@ -121,6 +122,7 @@ public class PlayerEvents {
 		event.getEntityPlayer().motionZ = 0.0D;
 
 		if (!event.getEntityPlayer().world.isRemote) {
+
 			final val allPlayers = event.getEntityPlayer().world.playerEntities;
 			int asleepPlayers = 0;
 			if (!allPlayers.isEmpty()) {
@@ -128,18 +130,8 @@ public class PlayerEvents {
 					if (!entityPlayer.isSpectator() && entityPlayer.isPlayerSleeping())
 						asleepPlayers++;
 				}
-				// TODO: sleep vote kick thing
-				/*
-				if (asleepPlayers < allPlayers.size()) {
-					// 0.5d = ratio of players for sleep kick
-					if (0.5d < ((double)asleepPlayers / allPlayers.size())) {
-						// initiate kick warning for non-asleep players
-					} else {
-						// show info that x players are sleeping, y needed
-					}
-				}
-				*/
 			}
+
 
 			if (ModAccessors.TICKRATE_CHANGER_LOADED) {
 				if (asleepPlayers == allPlayers.size()) {
@@ -175,6 +167,16 @@ public class PlayerEvents {
 
 	@SubscribeEvent
 	public void onPlayerWakeUp(PlayerWakeUpEvent event) {
+		resetTickRate();
+	}
+
+	@SubscribeEvent
+	public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		log.info("Player logged in!");
+		resetTickRate();
+	}
+
+	private void resetTickRate() {
 		if (ModAccessors.TICKRATE_CHANGER_LOADED) {
 			// always reset the tickrate to stock if anybody wakes up
 			ModAccessors.TICKRATE_CHANGER.changeTickrate(20.0f);

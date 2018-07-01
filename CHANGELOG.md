@@ -2,10 +2,10 @@
 
 ## Requirements:
 
-* [CosmicLib](https://github.com/CosmicDan-Minecraft/CosmicLib/releases/) 0.3.2 or later
+* [CosmicLib](https://github.com/CosmicDan-Minecraft/CosmicLib/releases/) 0.3.3 or later
 * Tickrate Changer [1.0.14](https://minecraft.curseforge.com/projects/tickratechanger/files/2482684) or later
 * Forge 1.12.2-14.23.2.2611 or later
-* Optional CoreModCompanion [CMC] of same version (attached) for full functionality
+* Optional CoreModCompanion [CMC] of same version for full functionality
 
 ## Changes:
 
@@ -23,3 +23,8 @@
 ### 0.1.1
 
 - Coremod/ASM and AT fixes for non-dev environment
+
+### 0.1.2
+
+* Add clock display during sleep
+* Show periodic reminder text to non-sleeping players when majority of other players are trying to sleep

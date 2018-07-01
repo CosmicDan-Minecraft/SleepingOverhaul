@@ -2,6 +2,7 @@ package com.cosmicdan.sleepingoverhaul.common;
 
 import com.cosmicdan.cosmiclib.annotations.ForgeEntryPoint;
 import com.cosmicdan.sleepingoverhaul.common.eventhandlers.PlayerEvents;
+import com.cosmicdan.sleepingoverhaul.common.eventhandlers.TickEvents;
 import com.cosmicdan.sleepingoverhaul.common.interop.ModAccessors;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.common.MinecraftForge;
@@ -26,6 +27,7 @@ public class CommonProxy {
 	 */
 	public void init(FMLInitializationEvent event) {
 		MinecraftForge.EVENT_BUS.register(new PlayerEvents());
+		MinecraftForge.EVENT_BUS.register(new TickEvents());
 	}
 
 	/**

@@ -64,6 +64,15 @@ public final class ModConfig {
 		//public boolean sleepAnywhere = true;
 	}
 
+	@Config.LangKey("sleepingoverhaul.config.Client")
+	public static final Client CLIENT = new Client();
+
+	public static class Client {
+		@Config.LangKey("sleepingoverhaul.config.Client.reminderText")
+		@Config.Comment("Text that will be periodically displayed to other players when the majority (>= 50%) of other players are asleep. [COUNT] will be replaced with (e.g.) '2/3' to display currently-sleeping/total players.")
+		public String reminderText = "[COUNT] players are trying to sleep. Please find a bed or log-off for short while.";
+	}
+
 	@UtilityClass
 	@Mod.EventBusSubscriber
 	public static final class EventHandler {

@@ -21,3 +21,8 @@ sleepingoverhaul.config.CoreModCompanion=CoreModCompanion [CMC] Configuration
 sleepingoverhaul.config.CoreModCompanion.tooltip=Configuration options that require the CoreModCompanion to be installed - otherwise these options have no effect.
 sleepingoverhaul.config.CoreModCompanion.allowSleepDuringDay=Sleep during day?
 sleepingoverhaul.config.CoreModCompanion.allowSleepDuringDay.tooltip=If true, players will NOT be automatically woken-up during the day and can sleep at any time.
+
+sleepingoverhaul.config.Client=Client-side Configuration
+sleepingoverhaul.config.Client.tooltip=Configuration options that only affect the client.
+sleepingoverhaul.config.Client.reminderText="Sleeping reminder text"
+sleepingoverhaul.config.Client.reminderText.tooltip="Text that will be periodically displayed to other players when the majority (>= 50%) of other players are asleep. [COUNT] will be replaced with (e.g.) '2/3' to display currently-sleeping/total players."
