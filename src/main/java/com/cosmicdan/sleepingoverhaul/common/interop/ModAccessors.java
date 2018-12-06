@@ -21,9 +21,9 @@ public class ModAccessors {
 			} else {
 				log.info("Tickrate Changer NOT detected, time-lapse sleep not available.");
 			}
-		} catch (Exception e) {
+		} catch (final Exception exception) {
 			// shouldn't happen
-			throw new RuntimeException(e);
+			throw new RuntimeException(exception);
 		}
 	}
 }

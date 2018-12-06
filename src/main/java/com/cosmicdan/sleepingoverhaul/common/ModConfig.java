@@ -39,6 +39,16 @@ public final class ModConfig {
 		@Config.LangKey("sleepingoverhaul.config.Restrictions.safetyCheckY")
 		@Config.Comment("Vertical distance to scan for hostile mobs (both up and down). Set to 0 to disable safety check completely.")
 		public double safetyCheckY = 5.0D;
+
+		@Config.LangKey("sleepingoverhaul.config.Restrictions.allowSleepDuringDay")
+		@Config.Comment("If true, players can sleep during the day and will NOT be automatically woken-up either.")
+		public boolean allowSleepDuringDay = false;
+
+		@Config.LangKey("sleepingoverhaul.config.Restrictions.sleepAnywhere")
+		@Config.Comment("REQUIRES CMC. If true, unlocks sleeping ability in any dimension (e.g. Nether).\n" +
+				"Note #1: Respawn point will not be reset - you always respawn in your overworld spawn point.\n" +
+				"Note #2: Other dimensions have their own idea about night-time, e.g. Nether is always night.")
+		public boolean sleepAnywhere = false;
 	}
 
 	@Config.LangKey("sleepingoverhaul.config.TimelapseMode")
@@ -50,34 +60,82 @@ public final class ModConfig {
 		public float rate = 1000.0f;
 	}
 
-	@Config.LangKey("sleepingoverhaul.config.CoreModCompanion")
-	public static final CoreModCompanion CMC = new CoreModCompanion();
+	@Config.LangKey("sleepingoverhaul.config.ClientSettings")
+	public static final ClientSettings CLIENT_SETTINGS = new ClientSettings();
 
-	public static class CoreModCompanion {
-		@Config.LangKey("sleepingoverhaul.config.CoreModCompanion.allowSleepDuringDay")
-		@Config.Comment("If true, players will NOT be automatically woken-up during the day and can sleep at any time.")
-		public boolean allowSleepDuringDay = false;
-
-		// TODO: Disabled for now. Requires coremod to BlockBed to allow use in non-respawnable dimensions and HELL (and not explode)
-		//@Config.LangKey("sleepingoverhaul.config.CoreModCompanion.sleepAnywhere")
-		//@Config.Comment("If true, sleeping can be performed in any dimension (e.g. Nether)")
-		//public boolean sleepAnywhere = true;
+	public static class ClientSettings {
+		@Config.LangKey("sleepingoverhaul.config.ClientSettings.showClockInBed")
+		@Config.Comment("If false, the clock will not be displayed when a player lies in bed.")
+		public boolean showClockInBed = true;
 	}
 
-	@Config.LangKey("sleepingoverhaul.config.Client")
-	public static final Client CLIENT = new Client();
+	@Config.LangKey("sleepingoverhaul.config.SleepVote")
+	public static final SleepVote SLEEP_VOTE = new SleepVote();
 
-	public static class Client {
-		@Config.LangKey("sleepingoverhaul.config.Client.reminderText")
-		@Config.Comment("Text that will be periodically displayed to other players when the majority (>= 50%) of other players are asleep. [COUNT] will be replaced with (e.g.) '2/3' to display currently-sleeping/total players.")
-		public String reminderText = "[COUNT] players are trying to sleep. Please find a bed or log-off for short while.";
+	public static class SleepVote {
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.percent")
+		@Config.Comment("Minimum percent of players required before sleep vote reminders (and actions, if any) can occur.")
+		@Config.RangeInt(min = 0, max = 100)
+		public int percent = 50;
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.actionTimeout")
+		@Config.Comment("Once the percentage of sleeping players is reached, wait this many seconds before performing the configured vote action.\n" +
+				"Note that if the sleeping player percentage drops below the configured minimum, the timeout action is cancelled.")
+		public int actionTimeout = 60;
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.action")
+		@Config.Comment("The action to perform once actionTimeout has elapsed (assuming the sleeping player percentage has been maintained).\n" +
+				"    NONE: Take no action, just show the reminder.\n" +
+				"    TIMELAPSE_ANYWAY: Continue with Timelapse - awake players have to deal with it. Default.\n" +
+				"    CMC_KICK_AWAKE: Requires CMC (otherwise skip-to-day will occur after kick). Kick awake players, then continue with Timelapse.\n" +
+				"    SKIP_TO_DAY: Skip to the next day (fallback to vanilla Minecraft behavior).")
+		public SleepVotePassAction action = SleepVotePassAction.TIMELAPSE_ANYWAY;
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.reminderText")
+		@Config.Comment("Text that will be periodically displayed to other players when the configured percent has been reached.\n" +
+				"(COUNT) will be replaced with (e.g.) '2/3' to display currently-sleeping/total players.\n" +
+				"(TIMEOUT) will be replaced with remaining time before sleep action is performed.")
+		public String reminderText = "(COUNT) players are trying to sleep. Timelapse will start in (TIMEOUT) seconds.";
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.reminderTextDisplayTime")
+		@Config.Comment("How many seconds at a time to display a reminder to players.")
+		public int reminderTextDisplayTime = 4;
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.reminderTextRepeatTime")
+		@Config.Comment("How many seconds between successive reminder displays.")
+		public int reminderTextRepeatTime = 20;
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.allAsleepText")
+		@Config.Comment("Text displayed when all players are asleep.")
+		public String allAsleepText = "All players asleep: Timelapse active!";
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.votePassedText")
+		@Config.Comment("Text displayed when vote action has passed.")
+		public String votePassedText = "Vote action passed: Timelapse active!";
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.cancelledText")
+		@Config.Comment("Text to display to players when an active or pending vote action is cancelled for whatever reason.\n" +
+				"(COUNT) will be replaced with (e.g.) '2/3' to display currently-sleeping/total players.")
+		public String cancelledText = "Timelapse cancelled/finished ((COUNT) players sleeping).";
+
+		@Config.LangKey("sleepingoverhaul.config.SleepVote.kickedText")
+		@Config.Comment("Text to display to players (The 'Reason' on the Disconnected screen) when they're kicked as the result of a\n" +
+				"vote. Note that due to a Minecraft bug, sometimes a generic reason may still show instead.")
+		public String kickText = "Automatic kick from sleep vote timeout.";
+
+		public enum SleepVotePassAction {
+			NONE,
+			TIMELAPSE_ANYWAY,
+			CMC_KICK_AWAKE,
+			SKIP_TO_DAY
+		}
 	}
 
 	@UtilityClass
 	@Mod.EventBusSubscriber
 	public static final class EventHandler {
 		@SubscribeEvent
-		public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
+		public static void onConfigChanged(final ConfigChangedEvent.OnConfigChangedEvent event) {
 			if(event.getModID().equals(ModConstants.MODID)) {
 				ConfigManager.sync(ModConstants.MODID, Config.Type.INSTANCE);
 			}

@@ -15,17 +15,17 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 @Log4j2(topic = "SleepingOverhaul/ServerProxy")
 public class ServerProxy extends CommonProxy {
 	@Override
-	public final void preInit(FMLPreInitializationEvent event) {
+	public final void preInit(final FMLPreInitializationEvent event) {
 		super.preInit(event);
 	}
 
 	@Override
-	public final void init(FMLInitializationEvent event) {
+	public final void init(final FMLInitializationEvent event) {
 		super.init(event);
 	}
 
 	@Override
-	public final void postInit(FMLPostInitializationEvent event) {
+	public final void postInit(final FMLPostInitializationEvent event) {
 		super.postInit(event);
 	}
 }

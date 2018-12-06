@@ -15,8 +15,11 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
+import net.minecraftforge.event.entity.player.SleepingTimeCheckEvent;
+import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
@@ -26,36 +29,54 @@ import java.util.List;
 /**
  * @author Daniel 'CosmicDan' Connolly
  */
-@Log4j2(topic = "SleepingTweaks/PlayerEvents")
-public class PlayerEvents {
+@SuppressWarnings("ClassWithTooManyDependencies")
+@Log4j2(topic = "SleepingTweaks/PlayerSleepHandler")
+public class PlayerSleepHandler {
 	private static final Timekeeper TIMEKEEPER = Timekeeper.getInstance();
 
+	/**
+	 * Hook for allowing sleeping during the day, if enabled in mod config
+	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onSleepingTimeCheck(final SleepingTimeCheckEvent event) {
+		if (ModConfig.RESTRICTIONS.allowSleepDuringDay)
+			event.setResult(Event.Result.ALLOW);
+	}
+
+	/**
+	 * Main hook for handling sleep. Most of this is replicated and adapted from EntityPlayer#trySleep, since Forge doesn't
+	 * provide more specific events. As long as we return a result, the vanilla sleep handling will not be performed - despite Forge
+	 * docs implying otherwise (hopefully it's not deprecated).
+	 */
 	@SuppressWarnings({"MethodWithMoreThanThreeNegations", "MethodWithMultipleReturnPoints", "OverlyComplexMethod", "OverlyLongMethod"})
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onPlayerSleepInBed(PlayerSleepInBedEvent event) {
-		// Adapted from EntityPlayer#trySleep
+	public void onPlayerSleepInBed(final PlayerSleepInBedEvent event) {
 		final BlockPos bedPos = event.getPos();
+		final World world = event.getEntityPlayer().world;
+		final IBlockState bedBlockState = world.getBlockState(bedPos);
 
-		final EnumFacing enumfacing = event.getEntityPlayer().world.getBlockState(bedPos).getValue(BlockHorizontal.FACING);
-		if (!event.getEntityPlayer().world.isRemote) {
+		if (!(bedBlockState.getBlock() instanceof BlockHorizontal))
+			return;
+
+		final EnumFacing enumfacing = world.getBlockState(bedPos).getValue(BlockHorizontal.FACING);
+		if (!world.isRemote) {
 			if (event.getEntityPlayer().isPlayerSleeping() || !event.getEntityPlayer().isEntityAlive()) {
 				event.setResult(EntityPlayer.SleepResult.OTHER_PROBLEM);
 				return;
 			}
 
-			if (!canSleepHere(event.getEntityPlayer().world.provider.isSurfaceWorld())) {
+			if (!canSleepHere(world.provider.isSurfaceWorld())) {
 				event.setResult(EntityPlayer.SleepResult.NOT_POSSIBLE_HERE);
 				return;
 			}
 
-			if (!canSleepNow(event.getEntityPlayer().world.isDaytime())) {
+			if (!canSleepNow(world.isDaytime())) {
 				event.setResult(EntityPlayer.SleepResult.NOT_POSSIBLE_NOW);
 				return;
 			}
 
-			val isBedInRange = (boolean) EntityPlayerMirror.METHOD___BED_IN_RANGE.call(event.getEntityPlayer(), bedPos, enumfacing);
+			final boolean isBedInRange = EntityPlayerMirror.METHOD___BED_IN_RANGE.call(event.getEntityPlayer(), bedPos, enumfacing);
 			if (!isBedInRange) {
-				// Bed out of range
 				event.setResult(EntityPlayer.SleepResult.TOO_FAR_AWAY);
 				return;
 			}
@@ -72,9 +93,8 @@ public class PlayerEvents {
 						bedPos.getZ() + mobSearchXZ
 				);
 
-				@SuppressWarnings("unchecked")
-				val sleepEnemyPredicate = (Predicate<EntityMob>) EntityPlayerMirror.CONSTRUCTOR_SLEEP_ENEMY_PREDICATE.construct(null, event.getEntityPlayer());
-				final List<EntityMob> mobFoundList = event.getEntityPlayer().world.getEntitiesWithinAABB(EntityMob.class, searchBox, sleepEnemyPredicate);
+				@SuppressWarnings("unchecked") final val sleepEnemyPredicate = (Predicate<EntityMob>) EntityPlayerMirror.CONSTRUCTOR_SLEEP_ENEMY_PREDICATE.construct(null, event.getEntityPlayer());
+				final List<EntityMob> mobFoundList = world.getEntitiesWithinAABB(EntityMob.class, searchBox, sleepEnemyPredicate);
 
 				if (!mobFoundList.isEmpty()) {
 					event.setResult(EntityPlayer.SleepResult.NOT_SAFE);
@@ -92,11 +112,11 @@ public class PlayerEvents {
 		EntityMirror.METHOD___SET_SIZE.call(event.getEntityPlayer(), sleepingSize, sleepingSize);
 
 		IBlockState state = null;
-		if (event.getEntityPlayer().world.isBlockLoaded(bedPos))
-			state = event.getEntityPlayer().world.getBlockState(bedPos);
+		if (world.isBlockLoaded(bedPos))
+			state = world.getBlockState(bedPos);
 		final val defaultOffsetXZ = 0.5F;
 		final val offsetY = 0.6875F;
-		if ((null != state) && state.getBlock().isBed(state, event.getEntityPlayer().world, bedPos, event.getEntityPlayer())) {
+		if ((null != state) && state.getBlock().isBed(state, world, bedPos, event.getEntityPlayer())) {
 			final float offsetX = defaultOffsetXZ + (enumfacing.getFrontOffsetX() * 0.4F);
 			final float offsetZ = defaultOffsetXZ + (enumfacing.getFrontOffsetZ() * 0.4F);
 			EntityPlayerMirror.METHOD___SET_RENDER_OFFSET_FOR_SLEEP.call(event.getEntityPlayer(), enumfacing);
@@ -121,39 +141,22 @@ public class PlayerEvents {
 		event.getEntityPlayer().motionY = 0.0D;
 		event.getEntityPlayer().motionZ = 0.0D;
 
-		if (!event.getEntityPlayer().world.isRemote) {
-
-			final val allPlayers = event.getEntityPlayer().world.playerEntities;
-			int asleepPlayers = 0;
-			if (!allPlayers.isEmpty()) {
-				for (final EntityPlayer entityPlayer : allPlayers) {
-					if (!entityPlayer.isSpectator() && entityPlayer.isPlayerSleeping())
-						asleepPlayers++;
-				}
-			}
-
-
-			if (ModAccessors.TICKRATE_CHANGER_LOADED) {
-				if (asleepPlayers == allPlayers.size()) {
-					log.info("All players sleeping, Timelapse engaged!");
-					ModAccessors.TICKRATE_CHANGER.changeTickrate(ModConfig.TIMELAPSE_MODE.rate);
-				}
-			} else {
-				event.getEntityPlayer().world.updateAllPlayersSleepingFlag();
-			}
-
+		if (!world.isRemote) {
+			if (!ModAccessors.TICKRATE_CHANGER_LOADED) {
+				// use vanilla sleeping
+				world.updateAllPlayersSleepingFlag();
+			} // else, SleepingVoteHandler handles the actual logic for time-lapse sleep
 		}
 		event.setResult(EntityPlayer.SleepResult.OK);
 	}
 
-	private static boolean canSleepHere(boolean isOverworld) {
-		//return ModConfig.RESTRICTIONS.onlyOverworld ? isOverworld : true;
-		return isOverworld;
+	private static boolean canSleepHere(final boolean isOverworld) {
+		return ModConfig.RESTRICTIONS.sleepAnywhere || isOverworld;
 	}
 
-	private static boolean canSleepNow(boolean isDaytime) {
+	private static boolean canSleepNow(final boolean isDaytime) {
 		boolean canSleepNow = true;
-		if (!ModConfig.CMC.allowSleepDuringDay) {
+		if (!ModConfig.RESTRICTIONS.allowSleepDuringDay) {
 			if (ModConfig.CUSTOM_NIGHT_DETECTION.customStartEnabled) {
 				final int currentTime = TIMEKEEPER.getDayTicksElapsed();
 				if (currentTime < ModConfig.CUSTOM_NIGHT_DETECTION.customStartValue)
@@ -166,20 +169,12 @@ public class PlayerEvents {
 	}
 
 	@SubscribeEvent
-	public void onPlayerWakeUp(PlayerWakeUpEvent event) {
-		resetTickRate();
+	public void onPlayerWakeUp(final PlayerWakeUpEvent event) {
+		SleepingVoteHandler.forceUpdate();
 	}
 
 	@SubscribeEvent
-	public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-		log.info("Player logged in!");
-		resetTickRate();
-	}
-
-	private void resetTickRate() {
-		if (ModAccessors.TICKRATE_CHANGER_LOADED) {
-			// always reset the tickrate to stock if anybody wakes up
-			ModAccessors.TICKRATE_CHANGER.changeTickrate(20.0f);
-		}
+	public void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent event) {
+		SleepingVoteHandler.forceUpdate();
 	}
 }

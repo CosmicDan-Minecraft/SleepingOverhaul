@@ -178,7 +178,7 @@ minecraft {
 
 dependencies {
 	compile project(':CosmicLib')
-	compileOnly "org.projectlombok:lombok:1.16.18"
+	compileOnly "org.projectlombok:lombok:1.18.0"
 	testCompile "junit:junit:4.12"
 }
 

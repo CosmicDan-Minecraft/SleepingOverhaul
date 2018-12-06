@@ -1,8 +1,8 @@
 package com.cosmicdan.sleepingoverhaul.common;
 
 import com.cosmicdan.cosmiclib.annotations.ForgeEntryPoint;
-import com.cosmicdan.sleepingoverhaul.common.eventhandlers.PlayerEvents;
-import com.cosmicdan.sleepingoverhaul.common.eventhandlers.TickEvents;
+import com.cosmicdan.sleepingoverhaul.common.eventhandlers.PlayerSleepHandler;
+import com.cosmicdan.sleepingoverhaul.common.eventhandlers.SleepingVoteHandler;
 import com.cosmicdan.sleepingoverhaul.common.interop.ModAccessors;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,20 +20,20 @@ public class CommonProxy {
 	/**
 	 * Register blocks/items to GameRegistry, (tile) entities ans assign oredict names
 	 */
-	public void preInit(FMLPreInitializationEvent event) {}
+	public void preInit(final FMLPreInitializationEvent event) {}
 
 	/**
 	 * Register worldgen, recipes, event handlers and send IMC messages
 	 */
-	public void init(FMLInitializationEvent event) {
-		MinecraftForge.EVENT_BUS.register(new PlayerEvents());
-		MinecraftForge.EVENT_BUS.register(new TickEvents());
+	public void init(final FMLInitializationEvent event) {
+		MinecraftForge.EVENT_BUS.register(new PlayerSleepHandler());
+		MinecraftForge.EVENT_BUS.register(new SleepingVoteHandler());
 	}
 
 	/**
 	 * Other stuff e.g. mod integrations, housework
 	 */
-	public void postInit(FMLPostInitializationEvent event) {
+	public void postInit(final FMLPostInitializationEvent event) {
 		ModAccessors.init();
 	}
 }

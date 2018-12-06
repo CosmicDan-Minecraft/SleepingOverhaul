@@ -1,10 +1,10 @@
 package com.cosmicdan.sleepingoverhaul.common.interop;
 
-import com.cosmicdan.cosmiclib.annotations.ForgeDynamic;
+import com.cosmicdan.cosmiclib.annotations.ForgeEntryPoint;
 
 @SuppressWarnings("ClassWithoutLogger")
-@ForgeDynamic
+@ForgeEntryPoint
 public class InteropTickrateChangerDummy implements InteropTickrateChangerInterface {
 	@Override
-	public void changeTickrate(float ticksPerSecond) {}
+	public void changeTickrate(final float ticksPerSecond) {}
 }
